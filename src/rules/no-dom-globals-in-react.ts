@@ -1,0 +1,169 @@
+/**
+ * Rule: no-dom-globals-in-react
+ *
+ * Consolidated rule replacing: no-dom-globals-in-react-fc,
+ * no-dom-globals-in-react-cc-render, no-dom-globals-in-constructor.
+ */
+
+import {
+  isDOMGlobalName,
+  shouldSkipReference,
+  isReactFunctionComponent,
+  isConstructor,
+  isReactClassRenderMethod,
+  isInsideSSRSafeContext,
+  hasUseDirective,
+  getSourceCode,
+} from "../utils";
+import type {
+  Scope,
+  ScopeReference,
+  ScopeVariable,
+  RuleOptions,
+} from "../types";
+
+export const noDomGlobalsInReact = {
+  meta: {
+    type: "problem" as const,
+    docs: {
+      description:
+        "Disallow use of DOM globals in React component bodies, constructors, render methods, and SSR-unsafe hook callbacks",
+      recommended: true,
+    },
+    messages: {
+      reactFC:
+        "Use of DOM global '{{name}}' in the render-cycle of a React component. Move it inside useEffect, useLayoutEffect, or a custom hook.",
+      constructor:
+        "Use of DOM global '{{name}}' in a class constructor. Move it to componentDidMount() or equivalent.",
+      renderMethod:
+        "Use of DOM global '{{name}}' in render(). Move it to componentDidMount().",
+    },
+    schema: [
+      {
+        type: "object",
+        properties: {
+          allowInUseClient: { type: "boolean", default: false },
+        },
+        additionalProperties: false,
+      },
+    ],
+  },
+
+  create(context: any, options: [RuleOptions?] | undefined) {
+    const opts = (options && options[0]) || {};
+    const allowInUseClient = opts.allowInUseClient ?? false;
+
+    return {
+      Program() {
+        if (allowInUseClient) {
+          const sourceCode = getSourceCode(context);
+          if (hasUseDirective(sourceCode.ast.body)) return;
+        }
+
+        const globalScope: Scope = getSourceCode(context).scopeManager
+          ? getSourceCode(context).scopeManager.globalScope
+          : getSourceCode(context).getScope(getSourceCode(context).ast);
+
+        const reported = new Set<string>();
+
+        function check(ref: ScopeReference) {
+          const node = ref.identifier;
+          const key = `${node.range?.[0]}:${node.range?.[1]}`;
+          if (reported.has(key)) return;
+          if (shouldSkipReference(node)) return;
+          if (!isDOMGlobalName(node.name)) return;
+
+          const fromScope = ref.from as Scope;
+          if (isInsideSSRSafeContext(fromScope)) return;
+
+          if (isConstructor(fromScope)) {
+            reported.add(key);
+            context.report({
+              node,
+              messageId: "constructor",
+              data: { name: node.name },
+            });
+            return;
+          }
+          if (isReactClassRenderMethod(fromScope)) {
+            reported.add(key);
+            context.report({
+              node,
+              messageId: "renderMethod",
+              data: { name: node.name },
+            });
+            return;
+          }
+          if (
+            fromScope.type === "function" &&
+            isReactFunctionComponent(fromScope)
+          ) {
+            reported.add(key);
+            context.report({
+              node,
+              messageId: "reactFC",
+              data: { name: node.name },
+            });
+            return;
+          }
+          if (
+            fromScope.type === "function" &&
+            isProbablyComponentScope(fromScope)
+          ) {
+            reported.add(key);
+            context.report({
+              node,
+              messageId: "reactFC",
+              data: { name: node.name },
+            });
+            return;
+          }
+
+          // Catch-all: DOM global in a function that's the argument of a
+          // CallExpression (e.g. useMemo(() => navigator…), useCallback(…)).
+          // This does NOT flag plain function declarations / expressions.
+          if (fromScope.type === "function" && isCallbackInCall(fromScope)) {
+            reported.add(key);
+            context.report({
+              node,
+              messageId: "reactFC",
+              data: { name: node.name },
+            });
+          }
+        }
+
+        function walkScopes(scope: Scope) {
+          scope.variables.forEach((v: ScopeVariable) => {
+            if (v.defs.length > 0) return;
+            if (!isDOMGlobalName(v.name)) return;
+            v.references.forEach((ref: ScopeReference) => check(ref));
+          });
+          scope.through.forEach((ref: ScopeReference) => check(ref));
+          scope.childScopes.forEach((child: Scope) => walkScopes(child));
+        }
+
+        walkScopes(globalScope);
+      },
+    };
+  },
+};
+
+function isProbablyComponentScope(scope: Scope): boolean {
+  const block = scope.block as any;
+  if (!block) return false;
+  let name: string | undefined;
+  if (block.type === "FunctionDeclaration") {
+    name = block.id?.name;
+  } else if (
+    block.parent?.type === "VariableDeclarator" &&
+    block.parent.id?.type === "Identifier"
+  ) {
+    name = block.parent.id.name;
+  }
+  return !!name && name[0] === name[0].toUpperCase();
+}
+
+function isCallbackInCall(scope: Scope): boolean {
+  const block = scope.block as any;
+  return block?.parent?.type === "CallExpression";
+}

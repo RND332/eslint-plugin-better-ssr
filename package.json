@@ -1,19 +1,26 @@
 {
-  "name": "eslint-plugin-ssr-friendly",
-  "version": "1.2.0",
+  "name": "eslint-plugin-better-ssr",
+  "version": "2.0.0",
+  "description": "Modern TypeScript fork of eslint-plugin-ssr-friendly with ESLint 9/10, flat config, and Next.js App Router support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "license": "MIT",
-  "main": "./src/index.js",
-  "description": "ESLint plugin that detects incorrect use of DOM globals in order to properly do SSR",
-  "author": "Flavio De Stefano <destefano.flavio@gmail.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/kopiro/eslint-plugin-ssr-friendly"
   },
   "homepage": "https://github.com/kopiro/eslint-plugin-ssr-friendly",
   "bugs": "https://github.com/kopiro/eslint-plugin-ssr-friendly/issues",
-  "files": [
-    "src/index.js"
-  ],
   "keywords": [
     "eslint",
     "eslintplugin",
@@ -21,25 +28,33 @@
     "server-side-rendering",
     "globals",
     "react",
-    "nodejs"
+    "nextjs",
+    "typescript",
+    "flat-config"
   ],
   "scripts": {
-    "test": "node ./test/index.test.js"
-  },
-  "devDependencies": {
-    "@typescript-eslint/parser": "^5.9.1",
-    "eslint": "^9.0.0",
-    "eslint-config-airbnb-base": "^14.2.1",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-import": "^2.23.3",
-    "eslint-plugin-prettier": "^3.4.0",
-    "prettier": "^2.3.0",
-    "typescript": "^4.5.4"
-  },
-  "peerDependencies": {
-    "eslint": ">=9.0.0"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build",
+    "test": "ts-node --project tsconfig.test.json test/index.test.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
   },
   "dependencies": {
-    "globals": "^13.8.0"
+    "globals": "^13.24.0"
+  },
+  "peerDependencies": {
+    "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@typescript-eslint/parser": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
   }
 }

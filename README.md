@@ -1,21 +1,35 @@
-# eslint-plugin-ssr-friendly
+# eslint-plugin-better-ssr
 
-ESLint plugin that detects incorrect use of DOM globals in order to properly do SSR and in general share code between client-side JS and Node.js modules.
+Modern TypeScript fork of [eslint-plugin-ssr-friendly](https://github.com/kopiro/eslint-plugin-ssr-friendly) with ESLint 8/9/10, flat config, and Next.js App Router support.
 
-[![npm version](https://badge.fury.io/js/eslint-plugin-ssr-friendly.svg)](https://badge.fury.io/js/eslint-plugin-ssr-friendly)
+Detects incorrect use of DOM globals (`window`, `document`, `navigator`, etc.) to help you write SSR-safe code that works in both Node.js and the browser.
 
 ## Installation
 
 ```bash
-npm i --save-dev eslint-plugin-ssr-friendly
+npm install --save-dev eslint-plugin-better-ssr
 ```
 
-Then add these to your eslintrc configuration:
+## Usage
+
+### Flat config (`eslint.config.js`) — ESLint 9+
+
+```js
+// eslint.config.js
+import betterSsr from "eslint-plugin-better-ssr";
+
+export default [
+  betterSsr.configs.recommended,
+  // ... your other configs
+];
+```
+
+### Legacy config (`.eslintrc`) — ESLint 8
 
 ```json
 {
-  "plugins": ["ssr-friendly"],
-  "extends": ["plugin:ssr-friendly/recommended"]
+  "plugins": ["better-ssr"],
+  "extends": ["plugin:better-ssr/recommended"]
 }
 ```
 
@@ -23,113 +37,93 @@ Then add these to your eslintrc configuration:
 
 ### `no-dom-globals-in-module-scope`
 
-Disallow use of DOM globals in module and global scope,
-as this will break any `import/require` in a NodeJS environment.
-
-To fix it, wrap it in a function that will call when on client-side.
-
-_Please note that we can't detect if you're still calling this function without
-properly checking upfront if `typeof window !== "undefined"`._
-
-### Not allowed
+Disallow use of DOM globals at the module or global scope. Accessing `window`, `document`, `navigator`, etc. during `import` will crash in Node.js.
 
 ```js
+// ❌ Bad — crashes on the server
 const retina = devicePixelRatio > 2;
+
+// ✅ Good — lazy evaluation
+const getRetina = () => devicePixelRatio > 2;
+
+// ✅ Good — typeof guard
+const width = typeof window !== "undefined" ? window.innerWidth : 0;
 ```
 
-### Allowed
+### `no-dom-globals-in-react`
+
+Disallow use of DOM globals in React component bodies, class constructors, render methods, and SSR-unsafe hook callbacks (`useMemo`, `useCallback`, `useRef`).
+
+DOM globals **are** allowed inside:
+
+- `useEffect` / `useLayoutEffect` callbacks
+- Custom hooks (functions starting with `use`)
+- Files with `"use client"` directive (opt-in)
 
 ```js
-const isRetina = () => devicePixelRatio >= 2;
-```
-
-### `no-dom-globals-in-constructor`
-
-Disallow use of DOM globals in class constructors,
-as this will break SSR if you're instantiating this class as singleton or you're rendering this component.
-
-To fix it, move this statement in a `initOnBrowser()` like-method or `componentDidMount()` if you're using React.
-
-_Please note that we can't detect if you're still calling this function in your constructor without
-properly checking upfront if `typeof window !== "undefined"`._
-
-### Not allowed
-
-```js
-class myClass {
-  constructor() {
-    document.title = "Otto";
-  }
-}
-```
-
-### Allowed
-
-```js
-class myClass {
-  componentDidMount() {
-    document.title = "Otto";
-  }
-}
-```
-
-### `no-dom-globals-in-react-cc-render`
-
-Disallow use of DOM globals in render() method of a React class-component,
-as this will break SSR if you're rendering this component.
-
-To fix it, move this statement to `componentDidMount()`
-
-_Please note that we can't detect if you're still calling this function in your constructor without
-properly checking upfront if `typeof window !== "undefined"`._
-
-### Not allowed
-
-```js
-class Header extends React.Component {
-  render() {
-    const width = window.innerWidth;
-    return <div style={{ width }} />;
-  }
-}
-```
-
-### Allowed
-
-```js
-class Header extends React.Component {
-  componentDidMount() {
-    this.setState({ width: window.innerWidth });
-  }
-  render() {
-    return <div style={{ width }} />;
-  }
-}
-```
-
-### `no-dom-globals-in-react-fc`
-
-Disallow use of DOM globals in the render-cycle of a React FC,
-as this will break SSR if you're rendering this component.
-
-To fix it, move this statement into a `useEffect())`
-
-### Not allowed
-
-```js
+// ❌ Bad — runs during SSR
 const Header = () => {
-  window.addEventListener("resize", () => {});
-  return <div />;
+  const width = window.innerWidth;
+  return <div style={{ width }} />;
 };
-```
 
-### Allowed
+// ❌ Bad — useMemo runs during SSR
+const isTouch = useMemo(() => navigator.maxTouchPoints > 0, []);
 
-```js
+// ✅ Good — useEffect only runs on the client
 const Header = () => {
+  const [width, setWidth] = useState(0);
   useEffect(() => {
-    window.addEventListener("resize", () => {});
+    setWidth(window.innerWidth);
   }, []);
-  return <div />;
+  return <div style={{ width }} />;
 };
+
+// ✅ Good — custom hook
+function useDevicePixelRatio() {
+  if (typeof window !== "undefined") {
+    return window.devicePixelRatio;
+  }
+  return 1;
+}
 ```
+
+### Options
+
+#### `allowInUseClient`
+
+Type: `boolean` (default: `false`)
+
+When `true`, files starting with a `"use client"` or `"use server"` directive are skipped by `no-dom-globals-in-react`:
+
+```js
+// eslint.config.js
+import betterSsr from "eslint-plugin-better-ssr";
+
+export default [
+  {
+    plugins: { "better-ssr": betterSsr },
+    rules: {
+      "better-ssr/no-dom-globals-in-react": [
+        "error",
+        { allowInUseClient: true },
+      ],
+    },
+  },
+];
+```
+
+## Backward Compatibility
+
+The original rule names are preserved as aliases so existing configs continue to work after upgrading:
+
+| Old name (v1)                       | New name (v2)                    |
+| ----------------------------------- | -------------------------------- |
+| `no-dom-globals-in-module-scope`    | `no-dom-globals-in-module-scope` |
+| `no-dom-globals-in-react-fc`        | `no-dom-globals-in-react`        |
+| `no-dom-globals-in-react-cc-render` | `no-dom-globals-in-react`        |
+| `no-dom-globals-in-constructor`     | `no-dom-globals-in-react`        |
+
+## License
+
+MIT
