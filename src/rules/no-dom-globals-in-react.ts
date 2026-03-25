@@ -1,16 +1,14 @@
 /**
  * Rule: no-dom-globals-in-react
  *
- * Consolidated rule replacing: no-dom-globals-in-react-fc,
- * no-dom-globals-in-react-cc-render, no-dom-globals-in-constructor.
+ * Flags DOM globals in React function component bodies and SSR-unsafe
+ * hook callbacks (useMemo, useCallback, useRef).
  */
 
 import {
   isDOMGlobalName,
   shouldSkipReference,
   isReactFunctionComponent,
-  isConstructor,
-  isReactClassRenderMethod,
   isInsideSSRSafeContext,
   hasUseDirective,
   getSourceCode,
@@ -27,16 +25,12 @@ export const noDomGlobalsInReact = {
     type: "problem" as const,
     docs: {
       description:
-        "Disallow use of DOM globals in React component bodies, constructors, render methods, and SSR-unsafe hook callbacks",
+        "Disallow use of DOM globals in React component bodies and SSR-unsafe hook callbacks",
       recommended: true,
     },
     messages: {
       reactFC:
         "Use of DOM global '{{name}}' in the render-cycle of a React component. Move it inside useEffect, useLayoutEffect, or a custom hook.",
-      constructor:
-        "Use of DOM global '{{name}}' in a class constructor. Move it to componentDidMount() or equivalent.",
-      renderMethod:
-        "Use of DOM global '{{name}}' in render(). Move it to componentDidMount().",
     },
     schema: [
       {
@@ -76,24 +70,6 @@ export const noDomGlobalsInReact = {
           const fromScope = ref.from as Scope;
           if (isInsideSSRSafeContext(fromScope)) return;
 
-          if (isConstructor(fromScope)) {
-            reported.add(key);
-            context.report({
-              node,
-              messageId: "constructor",
-              data: { name: node.name },
-            });
-            return;
-          }
-          if (isReactClassRenderMethod(fromScope)) {
-            reported.add(key);
-            context.report({
-              node,
-              messageId: "renderMethod",
-              data: { name: node.name },
-            });
-            return;
-          }
           if (
             fromScope.type === "function" &&
             isReactFunctionComponent(fromScope)

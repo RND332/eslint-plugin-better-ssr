@@ -102,17 +102,6 @@ tester.run("no-dom-globals-in-react-valid", noDomGlobalsInReact as any, {
       }`,
     },
     {
-      code: `class Header extends React.Component {
-        componentDidMount() { this.setState({ isRetina: devicePixelRatio >= 2 }); }
-        render() { return <div data-is-retina={this.state.isRetina} />; }
-      }`,
-    },
-    {
-      code: `class myClass {
-        init() { this.isRetina = window.devicePixelRatio >= 2; }
-      }`,
-    },
-    {
       code: `const Header = React.forwardRef(function (props, ref) {
         useEffect(() => { window.addEventListener('resize', () => {}); }, []);
         return <div {...props} ref={ref} />;
@@ -197,36 +186,6 @@ tester.run("no-dom-globals-in-react-invalid", noDomGlobalsInReact as any, {
         return <div ref={ref} />;
       };`,
       errors: [{ messageId: "reactFC" }],
-    },
-    {
-      code: `class myClass {
-        constructor() { this.scrollX = scrollX; }
-      }`,
-      errors: [{ messageId: "constructor" }],
-    },
-    {
-      code: `class myClass {
-        constructor() { document.title = "Otto"; }
-      }`,
-      errors: [{ messageId: "constructor" }],
-    },
-    {
-      code: `class Header extends React.Component {
-        render() {
-          const width = window.innerWidth;
-          return <div style={{ width }} />;
-        }
-      }`,
-      errors: [{ messageId: "renderMethod" }],
-    },
-    {
-      code: `class Header extends React.Component {
-        render() {
-          const width = window.innerWidth;
-          return null;
-        }
-      }`,
-      errors: [{ messageId: "renderMethod" }],
     },
     {
       code: `const Header = function ({url}) {

@@ -16,15 +16,10 @@ import { noDomGlobalsInReact } from "./rules/no-dom-globals-in-react";
 // ---------------------------------------------------------------------------
 
 const rules = {
-  // ── Primary rules (v2) ──────────────────────────────────────────────
   "no-dom-globals-in-module-scope": noDomGlobalsInModuleScope,
   "no-dom-globals-in-react": noDomGlobalsInReact,
 
-  // ── Backward-compatible aliases (v1 rule names) ─────────────────────
-  // These point to the consolidated no-dom-globals-in-react rule so that
-  // existing configs that reference the old names still work after upgrading.
-  "no-dom-globals-in-constructor": noDomGlobalsInReact,
-  "no-dom-globals-in-react-cc-render": noDomGlobalsInReact,
+  // Backward-compatible alias for the v1 FC rule
   "no-dom-globals-in-react-fc": noDomGlobalsInReact,
 } as const;
 

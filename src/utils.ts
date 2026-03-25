@@ -139,33 +139,6 @@ export function isReactFunctionComponent(scope: Scope): boolean {
   }
 }
 
-/**
- * Return true if `scope` belongs to a class constructor.
- */
-export function isConstructor(scope: Scope): boolean {
-  const block = scope.block;
-  if (!block?.parent) return false;
-  const parent = block.parent as TSESTree.MethodDefinition;
-  return parent.type === "MethodDefinition" && parent.kind === "constructor";
-}
-
-/**
- * Return true if `scope` belongs to a React class-component render() method
- * that returns JSX | null.
- */
-export function isReactClassRenderMethod(scope: Scope): boolean {
-  const block = scope.block;
-  if (!block?.parent) return false;
-  const parent = block.parent as TSESTree.MethodDefinition;
-  return (
-    parent.type === "MethodDefinition" &&
-    parent.kind === "method" &&
-    parent.key.type === "Identifier" &&
-    parent.key.name === "render" &&
-    isReturnValueJSXOrNull(scope)
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Scope helpers
 // ---------------------------------------------------------------------------

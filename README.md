@@ -52,7 +52,7 @@ const width = typeof window !== "undefined" ? window.innerWidth : 0;
 
 ### `no-dom-globals-in-react`
 
-Disallow use of DOM globals in React component bodies, class constructors, render methods, and SSR-unsafe hook callbacks (`useMemo`, `useCallback`, `useRef`).
+Disallow use of DOM globals in React function component bodies and SSR-unsafe hook callbacks (`useMemo`, `useCallback`, `useRef`).
 
 DOM globals **are** allowed inside:
 
@@ -115,14 +115,12 @@ export default [
 
 ## Backward Compatibility
 
-The original rule names are preserved as aliases so existing configs continue to work after upgrading:
+The original FC rule name is preserved as an alias:
 
 | Old name (v1)                       | New name (v2)                    |
 | ----------------------------------- | -------------------------------- |
 | `no-dom-globals-in-module-scope`    | `no-dom-globals-in-module-scope` |
 | `no-dom-globals-in-react-fc`        | `no-dom-globals-in-react`        |
-| `no-dom-globals-in-react-cc-render` | `no-dom-globals-in-react`        |
-| `no-dom-globals-in-constructor`     | `no-dom-globals-in-react`        |
 
 ## License
 
