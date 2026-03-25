@@ -33,6 +33,13 @@ tester.run("no-dom-globals-in-module-scope", noDomGlobalsInModuleScope as any, {
     {
       code: `import { CSS } from '@dnd-kit/utilities';\nconst style = { transform: CSS.Transform.toString(transform) };`,
     },
+    // Static DOM constants (Node.ELEMENT_NODE, etc.) are safe — just numbers
+    {
+      code: `const ELEMENT = Node.ELEMENT_NODE;`,
+    },
+    {
+      code: `const isElement = (n: Node) => n.nodeType === Node.ELEMENT_NODE;`,
+    },
   ],
   invalid: [
     {
@@ -173,6 +180,13 @@ const Sortable = () => {
   const style = { transform: CSS.Transform.toString(transform) };
   return <li style={style} />;
 };`,
+    },
+    // Node.ELEMENT_NODE is a static constant — safe in component body
+    {
+      code: `const useIsElement = () => {
+        const check = useCallback((n: Node) => n.nodeType === Node.ELEMENT_NODE, []);
+        return check;
+      };`,
     },
     {
       code: `"use client";

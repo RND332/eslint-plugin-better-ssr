@@ -66,6 +66,13 @@ export const noDomGlobalsInReact = {
           const key = `${node.range?.[0]}:${node.range?.[1]}`;
           if (reported.has(key)) return;
           if (shouldSkipReference(node)) return;
+          // Node.ELEMENT_NODE etc. are just static numeric constants — safe
+          if (
+            node.parent?.type === "MemberExpression" &&
+            node.parent.object === node &&
+            node.name === "Node"
+          )
+            return;
           // Skip references resolved to local/imported variables (e.g. CSS from @dnd-kit/utilities)
           const resolved = (ref as any).resolved;
           if (resolved && resolved.defs?.length > 0) return;

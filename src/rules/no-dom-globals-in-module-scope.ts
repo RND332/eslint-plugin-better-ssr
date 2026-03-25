@@ -70,6 +70,14 @@ export const noDomGlobalsInModuleScope = {
           )
             return;
 
+          // Node.ELEMENT_NODE etc. are just static numeric constants — safe
+          if (
+            parent?.type === "MemberExpression" &&
+            parent.object === node &&
+            node.name === "Node"
+          )
+            return;
+
           // Skip references resolved to local/imported variables
           // (ref.resolved is set when the scope manager found a matching
           // Variable — if it has defs, it's local, not a DOM global)
