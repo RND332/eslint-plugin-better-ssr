@@ -70,6 +70,11 @@ export const noDomGlobalsInModuleScope = {
           )
             return;
 
+          // Skip references resolved to local/imported variables
+          // (ref.resolved is set when the scope manager found a matching
+          // Variable — if it has defs, it's local, not a DOM global)
+          if (ref.resolved && ref.resolved.defs?.length > 0) return;
+
           if (!isDOMGlobalName(node.name)) return;
           if (!isAtModuleScope(ref.from)) return;
 

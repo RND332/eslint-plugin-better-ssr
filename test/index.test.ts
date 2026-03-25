@@ -29,6 +29,10 @@ tester.run("no-dom-globals-in-module-scope", noDomGlobalsInModuleScope as any, {
     {
       code: `function createNode() { return new AnalyserNode(context, options); }`,
     },
+    // Imported names that match browser globals should not be flagged
+    {
+      code: `import { CSS } from '@dnd-kit/utilities';\nconst style = { transform: CSS.Transform.toString(transform) };`,
+    },
   ],
   invalid: [
     {
@@ -161,6 +165,14 @@ tester.run("no-dom-globals-in-react-valid", noDomGlobalsInReact as any, {
         }, []);
         return <div />;
       };`,
+    },
+    // Imported CSS from library should not be flagged (false positive fix)
+    {
+      code: `import { CSS } from '@dnd-kit/utilities';
+const Sortable = () => {
+  const style = { transform: CSS.Transform.toString(transform) };
+  return <li style={style} />;
+};`,
     },
     {
       code: `"use client";

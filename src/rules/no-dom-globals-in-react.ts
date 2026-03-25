@@ -66,6 +66,9 @@ export const noDomGlobalsInReact = {
           const key = `${node.range?.[0]}:${node.range?.[1]}`;
           if (reported.has(key)) return;
           if (shouldSkipReference(node)) return;
+          // Skip references resolved to local/imported variables (e.g. CSS from @dnd-kit/utilities)
+          const resolved = (ref as any).resolved;
+          if (resolved && resolved.defs?.length > 0) return;
           if (!isDOMGlobalName(node.name)) return;
 
           // Code guarded by typeof window/navigator !== "undefined" is safe
