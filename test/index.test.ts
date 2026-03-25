@@ -138,6 +138,20 @@ tester.run("no-dom-globals-in-react-valid", noDomGlobalsInReact as any, {
     {
       code: `const touch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;`,
     },
+    // globalThis-based guard (unicorn/prefer-global-this pattern)
+    {
+      code: `const isTouchDevice = useMemo(() => {
+        if (typeof globalThis === 'undefined') return false;
+        return 'ontouchstart' in globalThis;
+      }, []);`,
+    },
+    // globalThis guard with window
+    {
+      code: `const isTouchDevice = useMemo(() => {
+        if (typeof globalThis === 'undefined' || typeof window === 'undefined') return false;
+        return 'ontouchstart' in globalThis || navigator.maxTouchPoints > 0;
+      }, []);`,
+    },
     // typeof guard in useCallback
     {
       code: `const Header = () => {

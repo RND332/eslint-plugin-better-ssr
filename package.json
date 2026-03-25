@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-better-ssr",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Modern TypeScript fork of eslint-plugin-ssr-friendly with ESLint 9/10, flat config, and Next.js App Router support",
   "keywords": [
     "eslint",

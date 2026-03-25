@@ -58,6 +58,7 @@ DOM globals **are** allowed inside:
 
 - `useEffect` / `useLayoutEffect` callbacks
 - Custom hooks (functions starting with `use`)
+- Code guarded by `typeof window === 'undefined'` / `typeof globalThis === 'undefined'` early returns
 - Files with `"use client"` directive (opt-in)
 
 ```js
@@ -86,6 +87,18 @@ function useDevicePixelRatio() {
   }
   return 1;
 }
+
+// ✅ Good — typeof guard with globalThis (unicorn/prefer-global-this compatible)
+const isTouchDevice = useMemo(() => {
+  if (typeof globalThis === "undefined") return false;
+  return "ontouchstart" in globalThis;
+}, []);
+
+// ✅ Good — compound typeof guard
+const isTouchDevice = useMemo(() => {
+  if (typeof globalThis === "undefined" || typeof window === "undefined") return false;
+  return "ontouchstart" in globalThis || navigator.maxTouchPoints > 0;
+}, []);
 ```
 
 ### Options

@@ -382,6 +382,7 @@ function isTypeofBrowserComparison(node: TSESTree.Node): boolean {
     "screen",
     "localStorage",
     "sessionStorage",
+    "globalThis",
   ];
 
   // typeof window !== "undefined"
