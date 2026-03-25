@@ -2,25 +2,6 @@
   "name": "eslint-plugin-better-ssr",
   "version": "2.0.0",
   "description": "Modern TypeScript fork of eslint-plugin-ssr-friendly with ESLint 9/10, flat config, and Next.js App Router support",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/kopiro/eslint-plugin-ssr-friendly"
-  },
-  "homepage": "https://github.com/kopiro/eslint-plugin-ssr-friendly",
-  "bugs": "https://github.com/kopiro/eslint-plugin-ssr-friendly/issues",
   "keywords": [
     "eslint",
     "eslintplugin",
@@ -31,6 +12,32 @@
     "nextjs",
     "typescript",
     "flat-config"
+  ],
+  "homepage": "https://github.com/kopiro/eslint-plugin-ssr-friendly",
+  "bugs": {
+    "url": "https://github.com/kopiro/eslint-plugin-ssr-friendly/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kopiro/eslint-plugin-ssr-friendly.git"
+  },
+  "license": "MIT",
+  "author": "rnd332",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "test": "test"
+  },
+  "files": [
+    "dist"
   ],
   "scripts": {
     "build": "tsc",
@@ -43,6 +50,12 @@
   "dependencies": {
     "globals": "^13.24.0"
   },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  },
   "peerDependencies": {
     "eslint": "^8.0.0 || ^9.0.0 || ^10.0.0"
   },
@@ -50,11 +63,5 @@
     "@typescript-eslint/parser": {
       "optional": true
     }
-  },
-  "devDependencies": {
-    "@typescript-eslint/parser": "^8.0.0",
-    "eslint": "^9.0.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.3.0"
   }
 }

@@ -10,6 +10,7 @@ import {
   shouldSkipReference,
   isReactFunctionComponent,
   isInsideSSRSafeContext,
+  isInsideTypeofGuard,
   hasUseDirective,
   getSourceCode,
 } from "../utils";
@@ -66,6 +67,9 @@ export const noDomGlobalsInReact = {
           if (reported.has(key)) return;
           if (shouldSkipReference(node)) return;
           if (!isDOMGlobalName(node.name)) return;
+
+          // Code guarded by typeof window/navigator !== "undefined" is safe
+          if (isInsideTypeofGuard(node)) return;
 
           const fromScope = ref.from as Scope;
           if (isInsideSSRSafeContext(fromScope)) return;

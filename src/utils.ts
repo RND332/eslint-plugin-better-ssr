@@ -248,6 +248,181 @@ export function shouldSkipReference(node: TSESTree.Identifier): boolean {
   return false;
 }
 
+/**
+ * Walk up the AST from `node` and return true if it is protected by a
+ * typeof guard that checks for the existence of a browser global.
+ *
+ * Handles two patterns:
+ *
+ * 1. Inline guard (node is inside the guarded branch):
+ *    if (typeof window !== "undefined") { <node> }
+ *    typeof window !== "undefined" ? <node> : fallback
+ *
+ * 2. Early-return guard (node is after the guard in the function body):
+ *    () => {
+ *      if (typeof window === "undefined") return false;
+ *      return <node>;   ← safe because guard already returned on server
+ *    }
+ */
+export function isInsideTypeofGuard(node: TSESTree.Node): boolean {
+  let current: TSESTree.Node | undefined = node;
+
+  while (current?.parent) {
+    const parent: TSESTree.Node = current.parent;
+
+    // if (typeof window !== "undefined") { <node> }
+    if (parent.type === "IfStatement") {
+      if (
+        current === parent.consequent &&
+        parent.test &&
+        hasTypeofBrowserCheck(parent.test)
+      ) {
+        return true;
+      }
+    }
+
+    // typeof window !== "undefined" ? <node> : fallback
+    if (parent.type === "ConditionalExpression") {
+      if (current === parent.consequent && hasTypeofBrowserCheck(parent.test)) {
+        return true;
+      }
+    }
+
+    // typeof window !== "undefined" && <node>
+    if (parent.type === "LogicalExpression" && parent.operator === "&&") {
+      if (current === parent.right && hasTypeofBrowserCheck(parent.left)) {
+        return true;
+      }
+    }
+
+    // Early-return guard at the start of a function body:
+    // () => { if (typeof window === 'undefined') return false; ...<node> }
+    if (
+      (parent.type === "FunctionExpression" ||
+        parent.type === "ArrowFunctionExpression" ||
+        parent.type === "FunctionDeclaration") &&
+      parent.body?.type === "BlockStatement"
+    ) {
+      if (hasEarlyTypeofReturnGuard(parent.body.body)) {
+        return true;
+      }
+    }
+
+    current = parent;
+  }
+
+  return false;
+}
+
+/**
+ * Return true if the first statement in a function body is an if-statement
+ * with a typeof browser check that returns early ( bail-out for SSR ).
+ *
+ * Pattern: if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+ */
+function hasEarlyTypeofReturnGuard(
+  statements: TSESTree.Statement[],
+): boolean {
+  if (statements.length === 0) return false;
+  const first = statements[0];
+
+  if (first.type !== "IfStatement" || !first.test) return false;
+
+  // All parts of the condition must be typeof-browser checks
+  if (!allPartsAreTypeofChecks(first.test)) return false;
+
+  // The consequent must be a return statement (or a block with one)
+  if (first.consequent.type === "ReturnStatement") return true;
+  if (
+    first.consequent.type === "BlockStatement" &&
+    first.consequent.body.length > 0 &&
+    first.consequent.body[0].type === "ReturnStatement"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Return true if the expression is entirely made up of typeof browser checks.
+ * For compound expressions (&& / ||), ALL parts must be typeof checks.
+ */
+function allPartsAreTypeofChecks(node: TSESTree.Node): boolean {
+  if (node.type === "LogicalExpression") {
+    return (
+      allPartsAreTypeofChecks(node.left) &&
+      allPartsAreTypeofChecks(node.right)
+    );
+  }
+  return isTypeofBrowserComparison(node);
+}
+
+/**
+ * Return true if `node` is a single comparison like
+ * `typeof window === "undefined"` or `"undefined" !== typeof navigator`.
+ */
+function isTypeofBrowserComparison(node: TSESTree.Node): boolean {
+  if (node.type !== "BinaryExpression") return false;
+  if (
+    node.operator !== "!==" &&
+    node.operator !== "!=" &&
+    node.operator !== "===" &&
+    node.operator !== "=="
+  ) {
+    return false;
+  }
+
+  const BROWSER_GLOBALS = [
+    "window",
+    "document",
+    "navigator",
+    "location",
+    "history",
+    "screen",
+    "localStorage",
+    "sessionStorage",
+  ];
+
+  // typeof window !== "undefined"
+  if (
+    node.left.type === "UnaryExpression" &&
+    node.left.operator === "typeof" &&
+    node.left.argument.type === "Identifier" &&
+    BROWSER_GLOBALS.includes(node.left.argument.name) &&
+    node.right.type === "Literal" &&
+    node.right.value === "undefined"
+  ) {
+    return true;
+  }
+
+  // "undefined" !== typeof window
+  if (
+    node.right.type === "UnaryExpression" &&
+    node.right.operator === "typeof" &&
+    node.right.argument.type === "Identifier" &&
+    BROWSER_GLOBALS.includes(node.right.argument.name) &&
+    node.left.type === "Literal" &&
+    node.left.value === "undefined"
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Used by the inline guard check (IfStatement / ConditionalExpression / &&)
+ * to see if a single expression node contains at least one typeof browser check.
+ */
+function hasTypeofBrowserCheck(node: TSESTree.Node): boolean {
+  if (isTypeofBrowserComparison(node)) return true;
+  if (node.type === "LogicalExpression") {
+    return hasTypeofBrowserCheck(node.left) || hasTypeofBrowserCheck(node.right);
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // "use client" / "use server" directive detection
 // ---------------------------------------------------------------------------

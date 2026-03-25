@@ -113,6 +113,41 @@ tester.run("no-dom-globals-in-react-valid", noDomGlobalsInReact as any, {
         return true ? <div /> : <div />;
       };`,
     },
+    // typeof guard inside useMemo — safe
+    {
+      code: `const isTouchDevice = useMemo(() => {
+        if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+        return 'ontouchstart' in globalThis || navigator.maxTouchPoints > 0;
+      }, []);`,
+    },
+    // typeof guard with !== in component body
+    {
+      code: `const Header = () => {
+        if (typeof window !== 'undefined') {
+          const w = window.innerWidth;
+          return <div data-width={w} />;
+        }
+        return <div />;
+      };`,
+    },
+    // typeof guard with ternary
+    {
+      code: `const width = typeof window !== 'undefined' ? window.innerWidth : 0;`,
+    },
+    // typeof guard with &&
+    {
+      code: `const touch = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;`,
+    },
+    // typeof guard in useCallback
+    {
+      code: `const Header = () => {
+        const getSize = useCallback(() => {
+          if (typeof window === 'undefined') return { w: 0, h: 0 };
+          return { w: window.innerWidth, h: window.innerHeight };
+        }, []);
+        return <div />;
+      };`,
+    },
     {
       code: `"use client";
 const isTouch = navigator.maxTouchPoints > 0;
@@ -163,6 +198,16 @@ tester.run("no-dom-globals-in-react-invalid", noDomGlobalsInReact as any, {
       code: `const Header = () => {
         window.addEventListener('resize', () => {});
         return <div />;
+      };`,
+      errors: [{ messageId: "reactFC" }],
+    },
+    // typeof guard that does NOT return early — still unsafe
+    {
+      code: `const Header = () => {
+        if (typeof window !== 'undefined') {
+          console.log('client');
+        }
+        return <div data-w={window.innerWidth} />;
       };`,
       errors: [{ messageId: "reactFC" }],
     },
