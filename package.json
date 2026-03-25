@@ -1,29 +1,37 @@
 {
   "name": "eslint-plugin-better-ssr",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Modern TypeScript fork of eslint-plugin-ssr-friendly with ESLint 9/10, flat config, and Next.js App Router support",
   "keywords": [
     "eslint",
     "eslintplugin",
-    "ssr",
-    "server-side-rendering",
+    "flat-config",
     "globals",
-    "react",
     "nextjs",
-    "typescript",
-    "flat-config"
+    "react",
+    "server-side-rendering",
+    "ssr",
+    "typescript"
   ],
   "homepage": "https://github.com/kopiro/eslint-plugin-ssr-friendly",
   "bugs": {
     "url": "https://github.com/kopiro/eslint-plugin-ssr-friendly/issues"
   },
+  "license": "MIT",
+  "author": "rnd332",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/kopiro/eslint-plugin-ssr-friendly.git"
   },
-  "license": "MIT",
-  "author": "rnd332",
+  "directories": {
+    "test": "test"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "import": "./dist/index.js",
@@ -31,14 +39,6 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "directories": {
-    "test": "test"
-  },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
